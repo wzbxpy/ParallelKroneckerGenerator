@@ -16,9 +16,11 @@ We consider following situation and design corresponding algorithm
 
 ## usage
 build:
+
     g++ Generator.cpp -O3 -o Generator
 
 run:
+
     ./Generator #path #logVertexNum #averageDegree #threadNums #seed
     ./Generator ./example/ 2 2 1 0
 
