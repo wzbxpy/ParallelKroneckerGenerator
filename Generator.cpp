@@ -6,8 +6,12 @@
 #include <cmath>
 #include <cstring>
 #include <unordered_set>
+#include <string>
 #include <memory>
+#include <fstream>
+
 using namespace std;
+
 double P[2][2] = {{0.57, 0.19}, {0.19, 0.05}};
 double U[2] = {0, 0};
 double V[2][2];
@@ -89,7 +93,8 @@ void genNeighbors(shared_ptr<int[]> edges, shared_ptr<double[]> neighborProbabil
     while (degree > 0)
     {
         discrete_distribution<> d{neighborProbability.get(), neighborProbability.get() + length};
-        for (auto i = 0; i < degree; i++)
+        auto previousDegree = degree;
+        for (auto i = 0; i < previousDegree; i++)
         {
             int neighbor = d(eng);
             if (maps[neighbor] > 0)
@@ -102,13 +107,15 @@ void genNeighbors(shared_ptr<int[]> edges, shared_ptr<double[]> neighborProbabil
                 degree--;
             }
         }
-        for (auto i = 0, j = 0; i < length; i++)
+        auto j = 0;
+        for (auto i = 0; i < length; i++)
             if (maps[i] > 0)
             {
                 maps[j] = maps[i];
                 neighborProbability[j] = neighborProbability[i];
                 j++;
             }
+        length = j;
     }
 }
 
@@ -170,18 +177,19 @@ void genEdges(shared_ptr<int[]> edges, shared_ptr<int[]> degree, long long total
 int main(int argc, char *argv[])
 {
     initialize();
-    int logVertices = atoi(argv[1]);
+    string fileName = argv[1];
+    int logVertices = atoi(argv[2]);
     int vertices = pow(2, logVertices);
-    int averageDegree = atoi(argv[2]);
+    int averageDegree = atoi(argv[3]);
     long long totalEdges = averageDegree * (long long)vertices;
     long long seed = 0;
     random_device r;
     seed = r();
     int threadNum = 1;
-    if (argc > 3)
-        threadNum = atoi(argv[3]);
     if (argc > 4)
-        seed = atol(argv[4]);
+        threadNum = atoi(argv[4]);
+    if (argc > 5)
+        seed = atol(argv[5]);
     default_random_engine eng(seed);
     shared_ptr<int[]> degree(new int[vertices]);
     shared_ptr<double[]> expectDegree(new double[vertices]);
@@ -191,10 +199,10 @@ int main(int argc, char *argv[])
     shared_ptr<int[]> edges(new int[totalEdges * 2]);
     genEdges(edges, degree, totalEdges, vertices, logVertices, eng);
     cout << totalEdges << endl;
-    for (int i = 0; i < totalEdges; i++)
-    {
-        cout << edges[i * 2] << " " << edges[i * 2 + 1] << endl;
-    }
+    fstream outFile(fileName + "edgelist", ios::out | ios::binary);
+    outFile.write((char *)edges.get(), sizeof(int) * totalEdges * 2);
+    fstream propertiesFile(fileName + "properties1.txt", ios::out);
+    propertiesFile << vertices << " " << totalEdges << endl;
     // array<int, 3> a = {1, 2, 10};
     // discrete_distribution<> d{a.begin(), a.end()};
     // int a[] = {1, 2, 10};
